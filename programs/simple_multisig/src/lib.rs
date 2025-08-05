@@ -2,7 +2,14 @@ use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 use solana_program::system_instruction;
 
-declare_id!("FF6HU9B4NPx8tCdBnUGEY3zmf2YX8cHgXpS1gFXpNNPU");
+declare_id!("AeHNvxxjzZBtBMKj44gtBJiEJa7De3z8NPhLENey9yVR");
+
+const MAX_DATA_LEN: usize = 100;
+const MAX_APPROVERS: usize = 10;
+
+impl Transaction {
+    pub const LEN: usize = 32 + 4 + MAX_DATA_LEN + 4 + MAX_APPROVERS + 32;
+}
 
 #[program]
 pub mod simple_multisig {
@@ -76,7 +83,7 @@ pub mod simple_multisig {
         // Construct the CPI instruction
         let ix = solana_program::instruction::Instruction {
             program_id: tx.program_id,
-            accounts: vec![], // Add any accoupnt metas here if needed
+            accounts: vec![], // Add any account metas here if needed
             data: tx.data.clone(),
         };
 
@@ -107,7 +114,11 @@ pub struct CreateMultisig<'info> {
 
 #[derive(Accounts)]
 pub struct CreateTransaction<'info> {
-    #[account(mut)]
+    #[account(
+        init,
+        payer = proposer,
+        space = 8 + Transaction::LEN
+    )]
     pub transaction: Account<'info, Transaction>,
 
     #[account()]
@@ -115,6 +126,8 @@ pub struct CreateTransaction<'info> {
 
     #[account(mut)]
     pub proposer: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
