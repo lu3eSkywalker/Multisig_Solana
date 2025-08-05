@@ -11,9 +11,10 @@ describe("Test", () => {
 
   const program = anchor.workspace.SimpleMultisig as anchor.Program<SimpleMultisig>;
 
+  // Generate a new keypair for the multisig account
+  const multisigKeypair = web3.Keypair.generate();
+
   it("creates a multisig", async () => {
-    // Generate a new keypair for the multisig account
-    const multisigKeypair = web3.Keypair.generate();
 
     const user1PublicKey = new web3.PublicKey("HVw1Z2KFYfKjdL2UThi5RGBvSUpsF4zdsPrucV8TggQm");
     const user2PublicKey = new web3.PublicKey("7eacdg5tZYPPqNdhi9PHvP5TUCEt9RjgUyoJL1a6L8JA");
@@ -40,14 +41,14 @@ describe("Test", () => {
 
     // Initialize the multisig account
     const txHash = await program.methods
-    .createMultisig(owners, threshold)
-    .accounts({
-      multisig: multisigKeypair.publicKey,
-      payer: program.provider.publicKey,
-      systemProgram: web3.SystemProgram.programId,
-    })
-    .signers([multisigKeypair])
-    .rpc();
+      .createMultisig(owners, threshold)
+      .accounts({
+        multisig: multisigKeypair.publicKey,
+        payer: program.provider.publicKey,
+        systemProgram: web3.SystemProgram.programId,
+      })
+      .signers([multisigKeypair])
+      .rpc();
 
     console.log(`Use 'solana confirm -v ${txHash}' to see the logs`);
 
@@ -57,4 +58,32 @@ describe("Test", () => {
     const multisigAccount = await program.provider.connection.getAccountInfo(multisigKeypair.publicKey);
     console.log("Multisig account created with data: ", multisigAccount);
   });
+
+  it("creates a transaction", async () => {
+
+    const instructionData = Buffer.from([
+      0x3b, 0x84, 0x18, 0xf6, 0x7a, 0x27, 0x08, 0xf3,
+      0x00, 0xca, 0x9a, 0x3b, 0x00, 0x00, 0x00, 0x00
+    ]);
+
+    const programId = new web3.PublicKey("4WUq6nq2q5XHrDS7TK8WyXb4BnTbp6XUYyPxWpK8FH7w");
+    const transactionKeypair = web3.Keypair.generate();
+
+    // Initialize the multisig account
+    const txHash = await program.methods
+      .createTransaction(programId, instructionData)
+      .accounts({
+        transaction: transactionKeypair.publicKey,
+        multisig: multisigKeypair.publicKey,
+        proposer: program.provider.publicKey,
+        systemProgram: web3.SystemProgram.programId,
+      })
+      .signers([transactionKeypair])
+      .rpc();
+
+    console.log(`Use 'solana confirm -v ${txHash}' to see the logs`);
+
+    // Confirm Transaction
+    await program.provider.connection.confirmTransaction(txHash);
+  })
 });
