@@ -14,6 +14,9 @@ describe("Test", () => {
   // Generate a new keypair for the multisig account
   const multisigKeypair = web3.Keypair.generate();
 
+  // Generate a new transasction keypair for the multisig account
+  const transactionKeypair = web3.Keypair.generate();
+
   it("creates a multisig", async () => {
 
     const user1PublicKey = new web3.PublicKey("HVw1Z2KFYfKjdL2UThi5RGBvSUpsF4zdsPrucV8TggQm");
@@ -66,10 +69,9 @@ describe("Test", () => {
       0x00, 0xca, 0x9a, 0x3b, 0x00, 0x00, 0x00, 0x00
     ]);
 
-    const programId = new web3.PublicKey("4WUq6nq2q5XHrDS7TK8WyXb4BnTbp6XUYyPxWpK8FH7w");
-    const transactionKeypair = web3.Keypair.generate();
+    const programId = new web3.PublicKey("9Jc5iNRPChzPJASVURjQQWSzbWFubB5zFAkZFeEg8hGc");
 
-    // Initialize the multisig account
+
     const txHash = await program.methods
       .createTransaction(programId, instructionData)
       .accounts({
@@ -86,4 +88,44 @@ describe("Test", () => {
     // Confirm Transaction
     await program.provider.connection.confirmTransaction(txHash);
   })
+
+  it("multisig owner 1 approves the transaction", async () => {
+
+    const user1PrivateKey = ""
+    const privateKeySeed = bs58.decode(user1PrivateKey);
+
+    const userKeyPair = web3.Keypair.fromSecretKey(privateKeySeed);
+
+    const txHash = await program.methods
+    .approve()
+    .accounts({
+      transaction: transactionKeypair.publicKey,
+      multisig: multisigKeypair.publicKey,
+      approver: userKeyPair.publicKey,
+    })
+    .signers([userKeyPair])
+    .rpc();
+
+    console.log(`Use 'solana confirm -v ${txHash}' to see the logs`);
+
+    // Confirm Transaction
+    await program.provider.connection.confirmTransaction(txHash);
+  });
+
+  it("multisig owner 2 approves the transaction", async() => {
+
+    const txHash = await program.methods
+    .approve()
+    .accounts({
+      transaction: transactionKeypair.publicKey,
+      multisig: multisigKeypair.publicKey,
+      approver: program.provider.publicKey,
+    })
+    .rpc();
+
+    console.log(`use 'solana confirm -v ${txHash}' to see the logs`);
+
+    // Confirm Transaction
+    await program.provider.connection.confirmTransaction(txHash);
+  });
 });
