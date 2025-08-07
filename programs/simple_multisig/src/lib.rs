@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 use solana_program::system_instruction;
 
-declare_id!("AeHNvxxjzZBtBMKj44gtBJiEJa7De3z8NPhLENey9yVR");
+declare_id!("GhihkTYff7rnjyeVxhcwD2uirD8sNfH2xZzLU9pujtZQ");
 
 const MAX_DATA_LEN: usize = 100;
 const MAX_APPROVERS: usize = 10;
@@ -83,7 +83,17 @@ pub mod simple_multisig {
         // Construct the CPI instruction
         let ix = solana_program::instruction::Instruction {
             program_id: tx.program_id,
-            accounts: vec![], // Add any account metas here if needed
+            accounts: vec![
+                AccountMeta::new(ctx.remaining_accounts[0].key(), false), // mint
+                AccountMeta::new(ctx.remaining_accounts[1].key(), false), // authority
+                AccountMeta::new(ctx.remaining_accounts[2].key(), false), // destination
+                AccountMeta::new_readonly(ctx.remaining_accounts[3].key(), false), // destinationOwner
+                AccountMeta::new(ctx.remaining_accounts[4].key(), true), // payer
+                AccountMeta::new_readonly(ctx.remaining_accounts[5].key(), false), // rent
+                AccountMeta::new_readonly(ctx.remaining_accounts[6].key(), false), // systemProgram
+                AccountMeta::new_readonly(ctx.remaining_accounts[7].key(), false), // tokenProgram
+                AccountMeta::new_readonly(ctx.remaining_accounts[8].key(), false), // associatedTokenProgram
+            ],
             data: tx.data.clone(),
         };
 
